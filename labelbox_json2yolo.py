@@ -26,19 +26,25 @@ def convert(file, zip=True):
         image_path = save_dir / 'images' / img['External ID']
         im.save(image_path, quality=95, subsampling=0)
 
-        for label in img['Label']['objects']:
-            # box
-            top, left, h, w = label['bbox'].values()  # top, left, height, width
-            xywh = [(left + w / 2) / width, (top + h / 2) / height, w / width, h / height]  # xywh normalized
+        try:
+            for label in img['Label']['objects']:
+                # box
+                top, left, h, w = label['bbox'].values()  # top, left, height, width
+                xywh = [(left + w / 2) / width, (top + h / 2) / height, w / width, h / height]  # xywh normalized
 
-            # class
-            cls = label['value']  # class name
-            if cls not in names:
-                names.append(cls)
+                # class
+                cls = label['value']  # class name
+                if cls not in names:
+                    names.append(cls)
 
-            line = names.index(cls), *xywh  # YOLO format (class_index, xywh)
+                line = names.index(cls), *xywh  # YOLO format (class_index, xywh)
+                with open(label_path, 'a') as f:
+                    f.write(('%g ' * len(line)).rstrip() % line + '\n')
+        except KeyError:
+            # if a key error occurs, its probably because there is no objects attribute to an image (no labels on image)
+            # so just write an empty text file
             with open(label_path, 'a') as f:
-                f.write(('%g ' * len(line)).rstrip() % line + '\n')
+                f.write("")
 
     # Save dataset.yaml
     d = {'path': f"../datasets/{file.stem}  # dataset root dir",
@@ -60,4 +66,4 @@ def convert(file, zip=True):
 
 
 if __name__ == '__main__':
-    convert('export-2021-06-29T15_25_41.934Z.json')
+    convert('export.json')
