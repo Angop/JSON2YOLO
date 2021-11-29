@@ -18,12 +18,14 @@ def convert(file, zip=True):
     with open(file) as f:
         data = json.load(f)  # load JSON
 
+    count = 0
     for img in tqdm(data, desc=f'Converting {file}'):
         im_path = img['Labeled Data']
         im = Image.open(requests.get(im_path, stream=True).raw if im_path.startswith('http') else im_path)  # open
         width, height = im.size  # image size
-        label_path = save_dir / 'labels' / Path(img['External ID']).with_suffix('.txt').name
-        image_path = save_dir / 'images' / img['External ID']
+        label_path = save_dir / Path(str(count)).with_suffix('.txt').name
+        image_path = save_dir / Path(str(count) + "." + str(img["External ID"]).split(".")[1])
+        # print(f"={image_path}=")
         im.save(image_path, quality=95, subsampling=0)
 
         try:
@@ -45,6 +47,7 @@ def convert(file, zip=True):
             # so just write an empty text file
             with open(label_path, 'a') as f:
                 f.write("")
+        count += 1
 
     # Save dataset.yaml
     d = {'path': f"../datasets/{file.stem}  # dataset root dir",
